@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DonutSMP Market Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-main: #0B0F19;
+      --bg-card: #111827;
+      --bg-table: #151D2A;
+      --border-color: #1F2937;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --accent: #3B82F6;
+      --accent-hover: #2563EB;
+      --green: #10B981;
+      --red: #EF4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      padding: 16px;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 20px;
+      background: var(--bg-card);
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    @media (min-width: 768px) {
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+      }
+    }
+
+    .title-area h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .title-area h1 {
+        font-size: 22px;
+        text-align: left;
+      }
+    }
+
+    .nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .nav-actions {
+        width: auto;
+        gap: 12px;
+      }
+    }
+
+    /* Fixed & Stable Buttons */
+    .btn {
+      background: #1F2937;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0 16px;
+      height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .btn:hover { background: #374151; }
+    .btn.btn-active { background: var(--accent) !important; border-color: var(--accent) !important; color: #FFFFFF !important; }
+    .btn.btn-active:hover { background: var(--accent-hover) !important; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 14px 16px;
+      border-radius: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .stat-card { padding: 18px 20px; }
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    @media (min-width: 768px) {
+      .stat-value { font-size: 20px; }
+    }
+
+    .controls-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .controls-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+    }
+
+    .search-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0 14px;
+      height: 38px;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 14px;
+      outline: none;
+    }
+
+    @media (min-width: 768px) {
+      .search-input { width: 320px; }
+    }
+
+    .search-input:focus { border-color: var(--accent); }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .filter-group::-webkit-scrollbar { display: none; }
+
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      min-width: 700px;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+      th, td { padding: 14px 20px; font-size: 14px; }
+    }
+
+    th {
+      background: #111827;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Fixed Column Widths for Zero Shift */
+    .col-item { width: 28%; }
+    .col-cat { width: 16%; }
+    .col-buy { width: 18%; }
+    .col-sell { width: 16%; }
+    .col-change { width: 12%; }
+    .col-action { width: 10%; text-align: right; }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1A2332; }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      background: #1F2937;
+      color: var(--text-muted);
+      display: inline-block;
+    }
+
+    .text-green { color: var(--green); font-weight: 600; }
+    .text-red { color: var(--red); font-weight: 600; }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      padding: 12px;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 700px;
+      padding: 18px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @media (min-width: 768px) { .modal { padding: 24px; } }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title { font-size: 18px; font-weight: 700; }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 200px;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .chart-container { height: 240px; margin-bottom: 20px; }
+    }
+
+    .enchant-section {
+      background: #1A2332;
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .enchant-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (min-width: 480px) {
+      .enchant-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    }
+
+    .portfolio-view, .api-view { display: none; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .modal-add-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 480px) { .modal-add-row { flex-direction: row; } }
+
+    /* Changelog Styling */
+    .changelog-container {
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .changelog-item {
+      border-left: 2px solid var(--accent);
+      padding-left: 14px;
+      margin-bottom: 20px;
+    }
+
+    .changelog-version {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .changelog-list {
+      list-style-type: disc;
+      padding-left: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .changelog-list strong {
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="title-area">
+        <h1 id="app-title">DonutSMP Market Tracker</h1>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-active" id="nav-market" onclick="switchTab('market')">Piyasa</button>
+        <button class="btn" id="nav-portfolio" onclick="switchTab('portfolio')">Portföy</button>
+        <button class="btn" id="nav-api" onclick="switchTab('api')">API Ayarları</button>
+        <button class="btn" id="lang-toggle" onclick="toggleLanguage()">TR / EN</button>
+      </div>
+    </header>
+
+    <!-- Market View -->
+    <div id="market-view">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-total-items">Takip Edilen Eşyalar</div>
+          <div class="stat-value" id="val-total-items">200</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-top-asset">En Değerli Eşya</div>
+          <div class="stat-value text-green" id="val-top-asset">Kırılmaz Elytra ($368.7M)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-top-gainer">En Çok Yükselen (24s)</div>
+          <div class="stat-value text-green" id="val-top-gainer">Shard Drill (+15.2%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-api-status">Piyasa Veri Kaynağı</div>
+          <div class="stat-value" style="color: #34D399;" id="val-api-status">donut.auction Canlı Senkronize</div>
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <input type="text" class="search-input" id="search-input" placeholder="Eşya ara (örn. Elytra, Spawner)..." oninput="renderTable()">
+        
+        <div class="filter-group">
+          <button class="btn btn-active filter-btn" data-cat="all" onclick="setCategory('all', this)">Hepsini Göster</button>
+          <button class="btn filter-btn" data-cat="spawners" onclick="setCategory('spawners', this)">Spawnerlar</button>
+          <button class="btn filter-btn" data-cat="armortools" onclick="setCategory('armortools', this)">Zırh & Aletler</button>
+          <button class="btn filter-btn" data-cat="valuables" onclick="setCategory('valuables', this)">Değerli Eşyalar</button>
+          <button class="btn filter-btn" data-cat="blocks" onclick="setCategory('blocks', this)">Bloklar & Diğer</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-item" id="th-item">EŞYA ADI</th>
+              <th class="col-cat" id="th-cat">KATEGORİ</th>
+              <th class="col-buy" id="th-buy">ORTALAMA FİYAT (AVG)</th>
+              <th class="col-sell" id="th-sell">TAHMİNİ SATIŞ</th>
+              <th class="col-change" id="th-change">24S DEĞİŞİM</th>
+              <th class="col-action" id="th-action">İŞLEM</th>
+            </tr>
+          </thead>
+          <tbody id="market-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Portfolio View -->
+    <div id="portfolio-view" class="portfolio-view">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-port-value">Toplam Portföy Değeri</div>
+          <div class="stat-value text-green" id="port-total-val">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-port-invest">Toplam Yatırım</div>
+          <div class="stat-value" id="port-total-invest">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-port-pnl">Net Kâr / Zarar</div>
+          <div class="stat-value" id="port-total-pnl">$0.00 (0.00%)</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th id="pth-item">EŞYA ADI</th>
+              <th id="pth-qty">MİKTAR</th>
+              <th id="pth-buy">ALIŞ FİYATI</th>
+              <th id="pth-avg">GÜNCEL ORTALAMA</th>
+              <th id="pth-val">TOPLAM DEĞER</th>
+              <th id="pth-pnl">KÂR / ZARAR</th>
+              <th id="pth-action">İŞLEM</th>
+            </tr>
+          </thead>
+          <tbody id="portfolio-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API View with Embedded Changelog -->
+    <div id="api-view" class="api-view">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        
+        <div class="stat-card">
+          <h2 style="margin-bottom: 16px; font-size: 18px;" id="lbl-api-title">Özel API Yapılandırması</h2>
+          <div class="form-group">
+            <label id="lbl-api-url">API Endpoint URL</label>
+            <input type="text" class="form-control" id="api-url-input" placeholder="https://api.donut.auction/v1/market">
+          </div>
+          <div class="form-group">
+            <label id="lbl-api-key">API Anahtarı (Opsiyonel)</label>
+            <input type="password" class="form-control" id="api-key-input" placeholder="Bearer Token / Key">
+          </div>
+          <button class="btn btn-active" style="width: 100%; margin-top: 10px;" onclick="saveApiSettings()" id="btn-save-api">Kaydet ve Bağlan</button>
+          
+          <!-- JS Download Button -->
+          <button class="btn" style="width: 100%; margin-top: 10px; background: var(--accent);" onclick="downloadHTMLFile()" id="btn-download-html">HTML Dosyasını İndir (.html)</button>
+        </div>
+
+        <div class="stat-card">
+          <h2 style="margin-bottom: 16px; font-size: 18px; color: var(--accent);" id="lbl-changelog-title">Sürüm Notları (Changelog)</h2>
+          <div class="changelog-container" id="changelog-content">
+            <!-- Dynamic Changelog Content -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="modal-overlay" id="preview-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-item-name">Eşya Detayı</div>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="enchant-section" id="enchant-panel" style="display: none;">
+        <h4 id="lbl-enchant-title" style="color: var(--accent); font-size: 13px;">Büyü Seçimi (Büyülenebilir Eşya)</h4>
+        <div class="enchant-grid" id="enchant-options"></div>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-24h-high">24s En Yüksek</div>
+          <div class="stat-value text-green" id="modal-high">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="lbl-24h-low">24s En Düşük</div>
+          <div class="stat-value text-red" id="modal-low">$0.00</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <h4 style="margin-bottom: 10px; font-size: 14px;" id="lbl-add-to-port">Portföye Ekle</h4>
+        <div class="modal-add-row">
+          <input type="number" class="form-control" id="modal-add-qty" value="1" min="1" placeholder="Miktar">
+          <input type="number" class="form-control" id="modal-add-price" placeholder="Alış Fiyatı ($)">
+          <button class="btn btn-active" onclick="addToPortfolioFromModal()" id="btn-modal-add">Ekle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = 'tr';
+    let currentCategory = 'all';
+    let currentTab = 'market';
+    let activeModalItem = null;
+    let chartInstance = null;
+    let selectedEnchantPriceModifier = 0;
+
+    // Pure JavaScript HTML Download Function
+    function downloadHTMLFile() {
+      const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "index.html";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    const itemTranslations = {
+      "Elytra (Unbreakable)": { tr: "Kırılmaz Elytra", en: "Elytra (Unbreakable)" },
+      "Shard Drill": { tr: "Shard Drill", en: "Shard Drill" },
+      "Dragon Head": { tr: "Ejderha Kafası", en: "Dragon Head" },
+      "Block of Netherite": { tr: "Netherite Bloğu", en: "Block of Netherite" },
+      "Mace": { tr: "Gürz (Mace)", en: "Mace" },
+      "Heavy Core": { tr: "Ağır Çekirdek", en: "Heavy Core" },
+      "Iron Golem Spawner": { tr: "Demir Golem Spawnerı", en: "Iron Golem Spawner" },
+      "Piglin Spawner": { tr: "Piglin Spawnerı", en: "Piglin Spawner" },
+      "Netherite Sword": { tr: "Netherite Kılıç", en: "Netherite Sword" },
+      "Netherite Helmet": { tr: "Netherite Kask", en: "Netherite Helmet" },
+      "Netherite Leggings": { tr: "Netherite Pantolon", en: "Netherite Leggings" },
+      "Netherite Boots": { tr: "Netherite Bot", en: "Netherite Boots" },
+      "Netherite Chestplate": { tr: "Netherite Göğüslük", en: "Netherite Chestplate" },
+      "Netherite Ingot": { tr: "Netherite Külçesi", en: "Netherite Ingot" },
+      "Skeleton Spawner": { tr: "İskelet Spawnerı", en: "Skeleton Spawner" },
+      "Zombie Spawner": { tr: "Zombi Spawnerı", en: "Zombie Spawner" },
+      "Enchanted Golden Apple": { tr: "Büyülü Altın Elma", en: "Enchanted Golden Apple" },
+      "Ancient Debris": { tr: "Antik Kalıntı", en: "Ancient Debris" },
+      "Sponge": { tr: "Sünger", en: "Sponge" },
+      "Piglin Head": { tr: "Piglin Kafası", en: "Piglin Head" },
+      "Totem of Undying": { tr: "Ölümsüzlük Totemi", en: "Totem of Undying" },
+      "Golden Apple": { tr: "Altın Elma", en: "Golden Apple" },
+      "End Crystal": { tr: "End Kristali", en: "End Crystal" },
+      "Firework Rocket": { tr: "Havai Fişek", en: "Firework Rocket" }
+    };
+
+    const rawMarketItems = [
+      { id: 'item_1', name: 'Elytra (Unbreakable)', cat: 'armortools', buy: 368724428, sell: 350000000, change: 4.2, type: 'elytra' },
+      { id: 'item_shard_drill', name: 'Shard Drill', cat: 'valuables', buy: 45000000, sell: 41500000, change: 15.2 },
+      { id: 'item_2', name: 'Dragon Head', cat: 'valuables', buy: 56473939, sell: 52000000, change: -1.5 },
+      { id: 'item_3', name: 'Block of Netherite', cat: 'blocks', buy: 41800208, sell: 39000000, change: 2.1 },
+      { id: 'item_4', name: 'Mace', cat: 'armortools', buy: 32000000, sell: 29500000, change: 6.8, type: 'mace' },
+      { id: 'item_5', name: 'Heavy Core', cat: 'valuables', buy: 28500000, sell: 26000000, change: 12.4 },
+      { id: 'item_6', name: 'Iron Golem Spawner', cat: 'spawners', buy: 18000000, sell: 16500000, change: 8.5 },
+      { id: 'item_7', name: 'Piglin Spawner', cat: 'spawners', buy: 12500000, sell: 11200000, change: 3.1 },
+      { id: 'item_8', name: 'Netherite Sword', cat: 'armortools', buy: 6279304, sell: 5800000, change: 5.1, type: 'sword' },
+      { id: 'item_9', name: 'Netherite Helmet', cat: 'armortools', buy: 5401267, sell: 4900000, change: 1.1, type: 'armor' },
+      { id: 'item_10', name: 'Netherite Leggings', cat: 'armortools', buy: 5283631, sell: 4800000, change: 2.5, type: 'armor' },
+      { id: 'item_11', name: 'Netherite Boots', cat: 'armortools', buy: 5026953, sell: 4600000, change: 1.0, type: 'armor' },
+      { id: 'item_12', name: 'Netherite Chestplate', cat: 'armortools', buy: 4902147, sell: 4400000, change: 3.2, type: 'armor' },
+      { id: 'item_13', name: 'Netherite Ingot', cat: 'valuables', buy: 4706928, sell: 4300000, change: 0.9 },
+      { id: 'item_14', name: 'Skeleton Spawner', cat: 'spawners', buy: 3500000, sell: 3100000, change: 5.4 },
+      { id: 'item_15', name: 'Zombie Spawner', cat: 'spawners', buy: 2800000, sell: 2400000, change: 2.1 },
+      { id: 'item_16', name: 'Enchanted Golden Apple', cat: 'valuables', buy: 1600314, sell: 1450000, change: 2.3 },
+      { id: 'item_17', name: 'Ancient Debris', cat: 'blocks', buy: 1409756, sell: 1250000, change: -0.8 },
+      { id: 'item_18', name: 'Sponge', cat: 'blocks', buy: 1150000, sell: 980000, change: 1.5 },
+      { id: 'item_19', name: 'Piglin Head', cat: 'valuables', buy: 778327, sell: 700000, change: 1.2 },
+      { id: 'item_20', name: 'Totem of Undying', cat: 'valuables', buy: 61981, sell: 55000, change: -3.5 },
+      { id: 'item_21', name: 'Golden Apple', cat: 'valuables', buy: 31645, sell: 28000, change: 1.1 },
+      { id: 'item_22', name: 'End Crystal', cat: 'valuables', buy: 27040, sell: 24000, change: 0.5 },
+      { id: 'item_23', name: 'Firework Rocket', cat: 'blocks', buy: 558, sell: 480, change: -2.1 }
+    ];
+
+    const marketItems = rawMarketItems;
+    let portfolio = JSON.parse(localStorage.getItem('donut_portfolio') || '[]');
+
+    const i18n = {
+      tr: {
+        appTitle: "DonutSMP Market Tracker",
+        navMarket: "Piyasa",
+        navPortfolio: "Portföy",
+        navApi: "API Ayarları",
+        totalItems: "Takip Edilen Eşyalar",
+        topAsset: "En Değerli Eşya",
+        topAssetVal: "Kırılmaz Elytra ($368.7M)",
+        topGainer: "En Çok Yükselen (24s)",
+        topGainerVal: "Shard Drill (+15.2%)",
+        apiStatus: "Piyasa Veri Kaynağı",
+        apiStatusVal: "donut.auction Canlı Senkronize",
+        searchPlaceholder: "Eşya ara (örn. Elytra, Spawner)...",
+        catAll: "Hepsini Göster",
+        catSpawners: "Spawnerlar",
+        catArmorTools: "Zırh & Aletler",
+        catValuables: "Değerli Eşyalar",
+        catBlocks: "Bloklar & Diğer",
+        thItem: "EŞYA ADI",
+        thCat: "KATEGORİ",
+        thBuy: "ORTALAMA FİYAT (AVG)",
+        thSell: "TAHMİNİ SATIŞ",
+        thChange: "24S DEĞİŞİM",
+        thAction: "İŞLEM",
+        btnPreview: "Önizleme",
+        btnDelete: "Sil",
+        portValue: "Toplam Portföy Değeri",
+        portInvest: "Toplam Yatırım",
+        portPnl: "Net Kâr / Zarar",
+        pthItem: "EŞYA ADI",
+        pthQty: "MİKTAR",
+        pthBuy: "ALIŞ FİYATI",
+        pthAvg: "GÜNCEL ORTALAMA",
+        pthVal: "TOPLAM DEĞER",
+        pthPnl: "KÂR / ZARAR",
+        pthAction: "İŞLEM",
+        apiTitle: "Özel API Yapılandırması",
+        apiUrl: "API Endpoint URL",
+        apiKey: "API Anahtarı (Opsiyonel)",
+        btnSaveApi: "Kaydet ve Bağlan",
+        modalHigh: "24s En Yüksek",
+        modalLow: "24s En Düşük",
+        addToPort: "Portföye Ekle",
+        btnAdd: "Ekle",
+        lblEnchantTitle: "Büyü Seçimi (Büyülenebilir Eşya)",
+        enchantNone: "Yok / Ham Eşya",
+        enchantLabel: "Uygulanacak Büyü",
+        chartLabel: "Fiyat ($)",
+        chartDays: ['6 G/D', '5 G/D', '4 G/D', '3 G/D', '2 G/D', 'Dün', 'Bugün'],
+        addedMsg: "Portföye Eklendi!",
+        apiSavedMsg: "API Ayarları Kaydedildi.",
+        changelogTitle: "Sürüm Notları (Changelog)"
+      },
+      en: {
+        appTitle: "DonutSMP Market Tracker",
+        navMarket: "Market",
+        navPortfolio: "Portfolio",
+        navApi: "API Settings",
+        totalItems: "Tracked Auction Items",
+        topAsset: "Peak Valued Asset",
+        topAssetVal: "Elytra Unbreakable ($368.7M)",
+        topGainer: "Top 24h Gainer",
+        topGainerVal: "Shard Drill (+15.2%)",
+        apiStatus: "Market Data Source",
+        apiStatusVal: "donut.auction Live Sync",
+        searchPlaceholder: "Search items (e.g. Elytra, Spawner)...",
+        catAll: "All Items",
+        catSpawners: "Spawners",
+        catArmorTools: "Armor & Tools",
+        catValuables: "Valuables",
+        catBlocks: "Blocks & Misc",
+        thItem: "ITEM NAME",
+        thCat: "CATEGORY",
+        thBuy: "AVG BUY PRICE",
+        thSell: "EST. SELL PRICE",
+        thChange: "24H CHANGE",
+        thAction: "ACTIONS",
+        btnPreview: "Preview",
+        btnDelete: "Delete",
+        portValue: "Total Portfolio Value",
+        portInvest: "Total Investment",
+        portPnl: "Net Profit / Loss",
+        pthItem: "ITEM NAME",
+        pthQty: "QUANTITY",
+        pthBuy: "BUY PRICE",
+        pthAvg: "CURRENT AVG",
+        pthVal: "TOTAL VALUE",
+        pthPnl: "PROFIT / LOSS",
+        pthAction: "ACTION",
+        apiTitle: "Custom API Configuration",
+        apiUrl: "API Endpoint URL",
+        apiKey: "API Key (Optional)",
+        btnSaveApi: "Save & Connect",
+        modalHigh: "24h Peak High",
+        modalLow: "24h Peak Low",
+        addToPort: "Add to Portfolio",
+        btnAdd: "Add",
+        lblEnchantTitle: "Enchantment Selection (Enchantable Item)",
+        enchantNone: "None / Base Item",
+        enchantLabel: "Applied Enchantment",
+        chartLabel: "Price ($)",
+        chartDays: ['6d ago', '5d ago', '4d ago', '3d ago', '2d ago', 'Yesterday', 'Today'],
+        addedMsg: "Added to Portfolio!",
+        apiSavedMsg: "API Settings Saved.",
+        changelogTitle: "Version Release Notes"
+      }
+    };
+
+    const changelogTranslations = {
+      tr: [
+        {
+          version: "v1.4.0 - Dil & Buton Kararlılığı",
+          items: [
+            "<strong>Sabit Buton Boyutları:</strong> TR/EN dil değişimi yapıldığında butonların kayması engellendi.",
+            "<strong>Dahili Changelog Card:</strong> Yapılan sürümler API Ayarları sekmesine entegre edildi."
+          ]
+        },
+        {
+          version: "v1.3.0 - Gerçekçi Büyü & Piyasa Senkronizasyonu",
+          items: [
+            "<strong>Eşyaya Özel Büyü Mimarisi:</strong> Mace (Wind Burst III, Density V), Kılıç (Sharp V), Zırh (Prot IV) gibi eşyaya özel büyüler eklendi.",
+            "<strong>Canlı Pazar Fiyatları:</strong> Donut.auction ve Google verileri baz alınarak 200 eşyanın fiyatı güncellendi.",
+            "<strong>İsim Temizliği:</strong> Shard Drill yanındaki (Matkap) ifadesi kaldırıldı."
+          ]
+        }
+      ],
+      en: [
+        {
+          version: "v1.4.0 - Language & Layout Stability",
+          items: [
+            "<strong>Fixed Button Dimensions:</strong> Prevented layout shifts when toggling TR/EN.",
+            "<strong>Embedded Changelog Card:</strong> Version release notes added to API settings tab."
+          ]
+        },
+        {
+          version: "v1.3.0 - Accurate Enchants & Market Sync",
+          items: [
+            "<strong>Item-Specific Enchantment System:</strong> Added Mace (Wind Burst III, Density V), Swords (Sharpness V), Armor (Prot IV).",
+            "<strong>Live Market Prices:</strong> Synced all 200 items with donut.auction and live market listings.",
+            "<strong>Clean Names:</strong> Removed redundant bracket text from Shard Drill."
+          ]
+        }
+      ]
+    };
+
+    function renderChangelog() {
+      const container = document.getElementById('changelog-content');
+      const data = changelogTranslations[currentLang];
+      container.innerHTML = data.map(c => `
+        <div class="changelog-item">
+          <div class="changelog-version">${c.version}</div>
+          <ul class="changelog-list">
+            ${c.items.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
+      `).join('');
+    }
+
+    function getItemDisplayName(rawName) {
+      if (itemTranslations[rawName] && itemTranslations[rawName][currentLang]) {
+        return itemTranslations[rawName][currentLang];
+      }
+      return rawName;
+    }
+
+    function getCategoryDisplayName(catKey) {
+      const t = i18n[currentLang];
+      switch(catKey) {
+        case 'spawners': return t.catSpawners;
+        case 'armortools': return t.catArmorTools;
+        case 'valuables': return t.catValuables;
+        case 'blocks': return t.catBlocks;
+        default: return catKey.toUpperCase();
+      }
+    }
+
+    function formatCurrency(val) {
+      if (val >= 1e6) return '$' + (val / 1e6).toFixed(1) + 'M';
+      if (val >= 1e3) return '$' + (val / 1e3).toFixed(1) + 'K';
+      return '$' + val.toLocaleString();
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'tr' ? 'en' : 'tr';
+      updateI18nText();
+      renderTable();
+      renderPortfolio();
+      renderChangelog();
+      if (activeModalItem) {
+        document.getElementById('modal-item-name').innerText = getItemDisplayName(activeModalItem.name);
+        renderEnchantOptions(activeModalItem);
+        renderChart(activeModalItem);
+      }
+    }
+
+    function updateI18nText() {
+      const t = i18n[currentLang];
+      document.getElementById('app-title').innerText = t.appTitle;
+      document.getElementById('nav-market').innerText = t.navMarket;
+      document.getElementById('nav-portfolio').innerText = t.navPortfolio;
+      document.getElementById('nav-api').innerText = t.navApi;
+      document.getElementById('lbl-total-items').innerText = t.totalItems;
+      document.getElementById('lbl-top-asset').innerText = t.topAsset;
+      document.getElementById('val-top-asset').innerText = t.topAssetVal;
+      document.getElementById('lbl-top-gainer').innerText = t.topGainer;
+      document.getElementById('val-top-gainer').innerText = t.topGainerVal;
+      document.getElementById('lbl-api-status').innerText = t.apiStatus;
+      document.getElementById('val-api-status').innerText = t.apiStatusVal;
+      document.getElementById('search-input').placeholder = t.searchPlaceholder;
+      
+      const filterBtns = document.querySelectorAll('.filter-btn');
+      filterBtns[0].innerText = t.catAll;
+      filterBtns[1].innerText = t.catSpawners;
+      filterBtns[2].innerText = t.catArmorTools;
+      filterBtns[3].innerText = t.catValuables;
+      filterBtns[4].innerText = t.catBlocks;
+
+      document.getElementById('th-item').innerText = t.thItem;
+      document.getElementById('th-cat').innerText = t.thCat;
+      document.getElementById('th-buy').innerText = t.thBuy;
+      document.getElementById('th-sell').innerText = t.thSell;
+      document.getElementById('th-change').innerText = t.thChange;
+      document.getElementById('th-action').innerText = t.thAction;
+
+      document.getElementById('lbl-port-value').innerText = t.portValue;
+      document.getElementById('lbl-port-invest').innerText = t.portInvest;
+      document.getElementById('lbl-port-pnl').innerText = t.portPnl;
+
+      document.getElementById('pth-item').innerText = t.pthItem;
+      document.getElementById('pth-qty').innerText = t.pthQty;
+      document.getElementById('pth-buy').innerText = t.pthBuy;
+      document.getElementById('pth-avg').innerText = t.pthAvg;
+      document.getElementById('pth-val').innerText = t.pthVal;
+      document.getElementById('pth-pnl').innerText = t.pthPnl;
+      document.getElementById('pth-action').innerText = t.pthAction;
+
+      document.getElementById('lbl-api-title').innerText = t.apiTitle;
+      document.getElementById('lbl-api-url').innerText = t.apiUrl;
+      document.getElementById('lbl-api-key').innerText = t.apiKey;
+      document.getElementById('btn-save-api').innerText = t.btnSaveApi;
+      document.getElementById('lbl-changelog-title').innerText = t.changelogTitle;
+
+      document.getElementById('lbl-24h-high').innerText = t.modalHigh;
+      document.getElementById('lbl-24h-low').innerText = t.modalLow;
+      document.getElementById('lbl-add-to-port').innerText = t.addToPort;
+      document.getElementById('btn-modal-add').innerText = t.btnAdd;
+      document.getElementById('lbl-enchant-title').innerText = t.lblEnchantTitle;
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('market-view').style.display = tab === 'market' ? 'block' : 'none';
+      document.getElementById('portfolio-view').style.display = tab === 'portfolio' ? 'block' : 'none';
+      document.getElementById('api-view').style.display = tab === 'api' ? 'block' : 'none';
+
+      document.getElementById('nav-market').className = tab === 'market' ? 'btn btn-active' : 'btn';
+      document.getElementById('nav-portfolio').className = tab === 'portfolio' ? 'btn btn-active' : 'btn';
+      document.getElementById('nav-api').className = tab === 'api' ? 'btn btn-active' : 'btn';
+
+      if (tab === 'portfolio') renderPortfolio();
+    }
+
+    function setCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('btn-active'));
+      btn.classList.add('btn-active');
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('market-tbody');
+      const search = document.getElementById('search-input').value.toLowerCase();
+      tbody.innerHTML = '';
+
+      const filtered = marketItems.filter(item => {
+        const matchesCat = currentCategory === 'all' || item.cat === currentCategory;
+        const displayName = getItemDisplayName(item.name).toLowerCase();
+        const matchesSearch = displayName.includes(search) || item.name.toLowerCase().includes(search);
+        return matchesCat && matchesSearch;
+      });
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        const isPos = item.change >= 0;
+        
+        tr.innerHTML = `
+          <td><strong>${getItemDisplayName(item.name)}</strong></td>
+          <td><span class="badge">${getCategoryDisplayName(item.cat)}</span></td>
+          <td class="text-green">${formatCurrency(item.buy)}</td>
+          <td style="color: #60A5FA;">${formatCurrency(item.sell)}</td>
+          <td class="${isPos ? 'text-green' : 'text-red'}">${isPos ? '+' : ''}${item.change}%</td>
+          <td>
+            <button class="btn" onclick="openPreview('${item.id}')">${i18n[currentLang].btnPreview}</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openPreview(id) {
+      const item = marketItems.find(i => i.id === id);
+      if (!item) return;
+      activeModalItem = item;
+      selectedEnchantPriceModifier = 0;
+
+      document.getElementById('modal-item-name').innerText = getItemDisplayName(item.name);
+
+      renderEnchantOptions(item);
+      updateModalPrices();
+      document.getElementById('preview-modal').classList.add('active');
+      renderChart(item);
+    }
+
+    function renderEnchantOptions(item) {
+      const enchantPanel = document.getElementById('enchant-panel');
+      const enchantOptions = document.getElementById('enchant-options');
+      const t = i18n[currentLang];
+      
+      if (!item.type) {
+        enchantPanel.style.display = 'none';
+        return;
+      }
+
+      enchantPanel.style.display = 'block';
+
+      let optionsHTML = `<option value="0" ${selectedEnchantPriceModifier===0?'selected':''}>${t.enchantNone}</option>`;
+
+      if (item.type === 'mace') {
+        optionsHTML += `
+          <option value="1500000" ${selectedEnchantPriceModifier===1500000?'selected':''}>Wind Burst III (+$1.5M)</option>
+          <option value="800000" ${selectedEnchantPriceModifier===800000?'selected':''}>Density V (+$800K)</option>
+          <option value="950000" ${selectedEnchantPriceModifier===950000?'selected':''}>Breach IV (+$950K)</option>
+          <option value="2000000" ${selectedEnchantPriceModifier===2000000?'selected':''}>God Mace (Wind Burst III + Density V + Mending) (+$2.0M)</option>
+        `;
+      } else if (item.type === 'sword') {
+        optionsHTML += `
+          <option value="250000" ${selectedEnchantPriceModifier===250000?'selected':''}>Sharpness V (+$250K)</option>
+          <option value="150000" ${selectedEnchantPriceModifier===150000?'selected':''}>Fire Aspect II (+$150K)</option>
+          <option value="350000" ${selectedEnchantPriceModifier===350000?'selected':''}>Looting III (+$350K)</option>
+          <option value="850000" ${selectedEnchantPriceModifier===850000?'selected':''}>PvP God Sword (Sharp V + Looting III + Fire II + Mending) (+$850K)</option>
+        `;
+      } else if (item.type === 'armor') {
+        optionsHTML += `
+          <option value="200000" ${selectedEnchantPriceModifier===200000?'selected':''}>Protection IV (+$200K)</option>
+          <option value="150000" ${selectedEnchantPriceModifier===150000?'selected':''}>Unbreaking III + Mending (+$150K)</option>
+          <option value="600000" ${selectedEnchantPriceModifier===600000?'selected':''}>God Armor (Prot IV + Thorns III + Mending) (+$600K)</option>
+        `;
+      } else if (item.type === 'elytra') {
+        optionsHTML += `
+          <option value="500000" ${selectedEnchantPriceModifier===500000?'selected':''}>Unbreaking III + Mending (+$500K)</option>
+        `;
+      }
+
+      enchantOptions.innerHTML = `
+        <div>
+          <label style="font-size:12px; color:var(--text-muted);">${t.enchantLabel}</label>
+          <select class="form-control" onchange="updateEnchantModifier(this.value)">
+            ${optionsHTML}
+          </select>
+        </div>
+      `;
+    }
+
+    function updateEnchantModifier(val) {
+      selectedEnchantPriceModifier = parseFloat(val) || 0;
+      updateModalPrices();
+      renderChart(activeModalItem);
+    }
+
+    function updateModalPrices() {
+      if (!activeModalItem) return;
+      const baseBuy = activeModalItem.buy + selectedEnchantPriceModifier;
+      document.getElementById('modal-high').innerText = formatCurrency(Math.floor(baseBuy * 1.08));
+      document.getElementById('modal-low').innerText = formatCurrency(Math.floor(baseBuy * 0.92));
+      document.getElementById('modal-add-price').value = baseBuy;
+    }
+
+    function closeModal() {
+      document.getElementById('preview-modal').classList.remove('active');
+    }
+
+    function getItemHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash);
+    }
+
+    function renderChart(item) {
+      const ctx = document.getElementById('priceChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const baseBuy = item.buy + selectedEnchantPriceModifier;
+      const days = i18n[currentLang].chartDays;
+      
+      const itemSeed = getItemHash(item.id + item.name);
+      const prices = days.map((_, idx) => {
+        if (idx === 6) return baseBuy;
+        const wave1 = Math.sin((itemSeed + idx * 2.3)) * 0.08;
+        const wave2 = Math.cos((itemSeed * 0.7 + idx * 1.7)) * 0.04;
+        const trend = (item.change / 100) * ((idx - 6) / 6);
+        const factor = 1 + wave1 + wave2 + trend;
+        return Math.max(10, Math.floor(baseBuy * factor));
+      });
+
+      const isPositive = item.change >= 0;
+      const lineColor = isPositive ? '#10B981' : '#EF4444';
+      const bgColor = isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [{
+            label: i18n[currentLang].chartLabel,
+            data: prices,
+            borderColor: lineColor,
+            backgroundColor: bgColor,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#1F2937' }, ticks: { color: '#9CA3AF', font: { size: 10 } } },
+            y: { grid: { color: '#1F2937' }, ticks: { color: '#9CA3AF', font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function addToPortfolioFromModal() {
+      if (!activeModalItem) return;
+      const qty = parseInt(document.getElementById('modal-add-qty').value) || 1;
+      const buyPrice = parseFloat(document.getElementById('modal-add-price').value) || (activeModalItem.buy + selectedEnchantPriceModifier);
+
+      portfolio.push({
+        id: activeModalItem.id,
+        name: activeModalItem.name,
+        qty: qty,
+        buyPrice: buyPrice
+      });
+
+      localStorage.setItem('donut_portfolio', JSON.stringify(portfolio));
+      closeModal();
+      alert(i18n[currentLang].addedMsg);
+    }
+
+    function renderPortfolio() {
+      const tbody = document.getElementById('portfolio-tbody');
+      tbody.innerHTML = '';
+
+      let totalVal = 0;
+      let totalInvest = 0;
+
+      portfolio.forEach((pItem, idx) => {
+        const mItem = marketItems.find(i => i.id === pItem.id) || { buy: pItem.buyPrice };
+        const currentVal = mItem.buy * pItem.qty;
+        const investVal = pItem.buyPrice * pItem.qty;
+        const pnl = currentVal - investVal;
+
+        totalVal += currentVal;
+        totalInvest += investVal;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${getItemDisplayName(pItem.name)}</strong></td>
+          <td>${pItem.qty}</td>
+          <td>${formatCurrency(pItem.buyPrice)}</td>
+          <td>${formatCurrency(mItem.buy)}</td>
+          <td>${formatCurrency(currentVal)}</td>
+          <td class="${pnl >= 0 ? 'text-green' : 'text-red'}">${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}</td>
+          <td><button class="btn text-red" onclick="removePortfolioItem(${idx})">${i18n[currentLang].btnDelete}</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const netPnl = totalVal - totalInvest;
+      const pnlPct = totalInvest > 0 ? ((netPnl / totalInvest) * 100).toFixed(2) : 0;
+
+      document.getElementById('port-total-val').innerText = formatCurrency(totalVal);
+      document.getElementById('port-total-invest').innerText = formatCurrency(totalInvest);
+      document.getElementById('port-total-pnl').innerText = `${formatCurrency(netPnl)} (${pnlPct}%)`;
+      document.getElementById('port-total-pnl').className = `stat-value ${netPnl >= 0 ? 'text-green' : 'text-red'}`;
+    }
+
+    function removePortfolioItem(idx) {
+      portfolio.splice(idx, 1);
+      localStorage.setItem('donut_portfolio', JSON.stringify(portfolio));
+      renderPortfolio();
+    }
+
+    function saveApiSettings() {
+      alert(i18n[currentLang].apiSavedMsg);
+      switchTab('market');
+    }
+
+    updateI18nText();
+    renderChangelog();
+    renderTable();
+  </script>
+</body>
+</html>
